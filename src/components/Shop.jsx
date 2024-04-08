@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useContext } from 'react'
+import { ShopContext } from '../Context'
 import { API_KEY, API_URL } from '../config'
 import Cart from './Cart'
 import GoodsList from './GoodsList'
@@ -7,76 +8,8 @@ import { BasketList } from './BasketList'
 import { Alert } from './Alert'
 
 function Shop() {
-  const [goods, setGoods] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [order, setOrder] = useState([])
-  const [isBasketShow, setBasketShow] = useState(false)
-  const [alertName, setAlertName] = useState('')
-  function addToBasket(item) {
-    const itemIndex = order.findIndex((orderItem) => orderItem.id === item.id)
-
-    if (itemIndex < 0) {
-      const newItem = {
-        ...item,
-        quantity: 1,
-      }
-      setOrder([...order, newItem])
-    } else {
-      const newOrder = order.map((orderItem, index) => {
-        if (index === itemIndex) {
-          return {
-            ...orderItem,
-            quantity: orderItem.quantity + 1,
-          }
-        } else {
-          return orderItem
-        }
-      })
-      setOrder(newOrder)
-    }
-    setAlertName(item.name)
-  }
-  function removeFromBasket(itemId) {
-    const newOrder = order.filter((item) => item.id !== itemId)
-    setOrder(newOrder)
-  }
-
-  const incQuantity = (itemID) => {
-    const newOrder = order.map((el) => {
-      if (el.id === itemID) {
-        const newQuantity = el.quantity + 1
-        return {
-          ...el,
-          quantity: newQuantity,
-        }
-      } else {
-        return el
-      }
-    })
-    setOrder(newOrder)
-  }
-  const decQuantity = (itemID) => {
-    const newOrder = order.map((el) => {
-      if (el.id === itemID) {
-        const newQuantity = el.quantity - 1
-        return {
-          ...el,
-          quantity: newQuantity >= 0 ? newQuantity : 0,
-        }
-      } else {
-        return el
-      }
-    })
-    setOrder(newOrder)
-  }
-
-  const handleBasketShow = () => {
-    setBasketShow(!isBasketShow)
-  }
-
-  const closeAlert = () => {
-    setAlertName('')
-  }
+  const { goods, setGoods, loading, order, isBasketShow, alertName } =
+    useContext(ShopContext)
 
   useEffect(function getGoods() {
     fetch(API_URL, {
@@ -85,27 +18,14 @@ function Shop() {
       },
     })
       .then((resp) => resp.json())
-      .then((data) => data.featured && setGoods(data.featured))
-    setLoading(false)
+      .then((data) => setGoods(data.featured))
   }, [])
   return (
     <main className="container content">
-      <Cart quantity={order.length} handleBasketShow={handleBasketShow} />
-      {loading ? (
-        <Preloade />
-      ) : (
-        <GoodsList goods={goods} addToBasket={addToBasket} />
-      )}
-      {isBasketShow && (
-        <BasketList
-          order={order}
-          handleBasketShow={handleBasketShow}
-          removeFromBasket={removeFromBasket}
-          incQuantity={incQuantity}
-          decQuantity={decQuantity}
-        />
-      )}
-      {alertName && <Alert name={alertName} closeAlert={closeAlert} />}
+      <Cart quantity={order.length} />
+      {loading ? <Preloade /> : <GoodsList goods={goods} />}
+      {isBasketShow && <BasketList />}
+      {alertName && <Alert />}
     </main>
   )
 }
